@@ -1,0 +1,884 @@
+Splash Color
+Information about object: o_control 
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///Variables de puntaje, color, modo juego
+
+//Variables globales de púntaje
+global.scoreBlack = 0;
+global.scoreWhite = 0;
+global.scoreRed = 0;
+global.scoreYellow = 0;
+global.scoreBlue = 0;
+
+
+//modo de juego
+modeGame = 0;
+jugar = true;
+
+//Vidas de player y level
+vidas = 3;
+time = 0;
+stepTime = .01;
+level = 0;
+
+audio_play_music( Buble,true);
+Step Event:
+execute code:
+
+///Pruebas desarrollo
+if( keyboard_check( vk_f1)){ vidas = 0;}
+if( keyboard_check( vk_f2)){ level = 10; global.scoreRed = 95; modeGame = 2;}
+execute code:
+
+///Random de posiciones
+anchoCol = 50;
+
+randomize();
+posX  = irandom_range(anchoCol, (room_width  - 220) - anchoCol);
+posY  =  -30;
+
+execute code:
+
+///Control vidas player y tiempo
+
+//Tiempo
+time+= stepTime;
+
+//control vidas--PERDISTE
+if ( vidas <= 0){
+    with( o_player){ instance_destroy();}//destruimos player
+    vidas = 0;//Mantenemos vidas en cero
+    stepTime = 0;//Detenemos el reloj
+    with(o_ColorMaster){ instance_destroy();}//Destruimos cualquier objeto color
+    jugar = false;
+    
+    //Continua desde donde se quedo juego al presionar ENTER
+    if(!instance_exists( o_buttonContinuar)){
+    instance_create(200, room_height/3 + 200, o_buttonContinuar);}
+    
+    /*
+    if ( keyboard_check( vk_enter)){
+        ///time = 0;
+        stepTime = .01;
+        ///global.scoreRojo = 0;
+        ///global.scoreAzul = 0;
+        ///global.scoreAmarillo = 0;
+        ///scoreTotal = 0;//Este es la suma de los globalscore de rojo azul y amarillo
+        ///level = 0;
+        ///par_color.vspeed = 2;
+        vidas = 3;
+        jugar = true;
+        instance_create(256,736, o_player);//volvemos a crear player
+    }
+    */
+    
+    //Reiniciamos juego
+    if(!instance_exists( o_buttonReload)){
+    instance_create(300, room_height/3 + 200, o_buttonReload);}
+    /*
+    if ( keyboard_check( vk_space)){
+    room_restart();
+    }
+    */
+    
+    //Salimos del juego
+    if(!instance_exists( o_buttonExit)){
+    instance_create(400, room_height/3 + 200, o_buttonExit);}
+    /*
+    if ( keyboard_check( vk_escape)){
+    game_end();
+    }
+    */
+}
+
+
+execute code:
+
+///Creacion de colores y modo de juego
+
+//modeGame 0 ====> una sola bola de color
+//modeGame 1 ====> dos bolas de color
+//modeGame 2 ====> tres bolas de color
+
+if(jugar){
+
+switch (modeGame)
+{
+    case 0:
+    if ( !instance_exists( o_ColorMaster)){
+        if (place_free( posX, posY))
+        {
+        //instance_create( posX, posY, arColor[ranColor]);
+        instance_create(posX, posY, o_ColorMaster );
+        }
+    }
+    
+    if( scoreTotal < 10)                       { level = 0; o_ColorMaster.vspeed = 2;}    
+    else if( scoreTotal >=10 && scoreTotal <20){ level = 1; o_ColorMaster.vspeed = 4;}
+    else if( scoreTotal >=20 && scoreTotal <30){ level = 2; o_ColorMaster.vspeed = 6;}
+    else if( scoreTotal >=30 && scoreTotal <40){ level = 3; o_ColorMaster.vspeed = 8;}
+    else if( scoreTotal ==40){ modeGame++;}
+    break;
+    
+    case 1:
+    if ( instance_number( o_ColorMaster) < 2)
+    {
+        if (place_free( posX, posY))
+        {
+        //instance_create( posX, posY, arColor[ranColor]);
+        instance_create(posX, posY, o_ColorMaster );
+        }
+    }
+    
+    if( scoreTotal >=40 && scoreTotal <50)     { level = 4; o_ColorMaster.vspeed = 2;}//10
+    else if( scoreTotal >=50 && scoreTotal <60){ level = 5; o_ColorMaster.vspeed = 4;}//12
+    else if( scoreTotal >=60 && scoreTotal <70){ level = 6; o_ColorMaster.vspeed = 6;}//14
+    else if( scoreTotal ==70){ modeGame++;}
+    break;
+    
+    case 2:   
+    if ( instance_number( o_ColorMaster) < 3)
+    {
+        if (place_free( posX, posY))
+        {
+        //instance_create( posX, posY, arColor[ranColor]);
+        instance_create(posX, posY, o_ColorMaster );
+        }
+    }
+    
+    if( scoreTotal >=70 && scoreTotal <80)      { level = 8; o_ColorMaster.vspeed = 2;}//16
+    else if( scoreTotal >=80 && scoreTotal <90) { level = 9; o_ColorMaster.vspeed = 4;}//18
+    else if( scoreTotal >=90 && scoreTotal <100){ level = 10; o_ColorMaster.vspeed = 6;}//20
+    else if( scoreTotal >=100){ modeGame++;}
+
+    break;
+    
+    case 3:   //GANASTE
+    //jugar = false;
+    stepTime = 0//Detenemos el reloj
+    o_ColorMaster.vspeed = 0;//Detenemos velocidad de colores
+    with(o_ColorMaster){ instance_destroy();}//Destruimos cualquier objeto color
+    
+    //Reiniciamos juego al presionar ENTER
+    if ( keyboard_check( vk_enter)){
+    game_restart();
+    }
+
+    break;
+    //default: STATEMENT;
+}
+}
+ 
+execute code:
+
+///Limites cursor
+
+//coordenadas de dibujo cuadro de juego
+var leftBorder = 0;//Borde izquierdo de area de juego.
+var rightBorder = room_width;//Borde derecho de area de juego.
+var upBorder = 0;//Borde superior de area de juego.
+var downBorder = room_height;//Borde inferior de area de juego.
+
+//Limite horizontal
+//var mirillaX = clamp(mouse_x,leftBorder , rightBorder);
+
+//Limite Vertical
+//var mirillaY = clamp(mouse_y,upBorder , downBorder);
+
+//Establece limite
+//window_mouse_set(mirillaX, mirillaY);
+
+//Tipo de cursor
+window_set_cursor( cr_cross);
+Draw Event:
+execute code:
+
+///INFO DESARROLLADOR
+//draw_text( 20, 10, "modeGAme =" + string(modeGame));
+//draw_text( 20, 20, "PosY =" + string(posY));
+
+//if ( instance_exists( o_rojo)){
+//draw_text( 20, 30, "Pos X rojo" + string(o_rojo.x));
+//draw_text( 20, 45, "Pos Y rojo" + string(o_rojo.y));
+//draw_text( 20, 55, "#rojo " + string(instance_number(o_rojo)));
+//}
+
+//if ( instance_exists( o_azul)){
+//draw_text( 20, 60, "Pos X azul" + string(o_azul.x));
+//draw_text( 20, 75, "Pos Y azul" + string(o_azul.y));
+//draw_text( 20, 85, "#azul " + string(instance_number(o_azul)));
+//}
+
+//if ( instance_exists( o_amarillo)){
+//draw_text( 20, 90, "Pos X amarillo" + string(o_amarillo .x));
+//draw_text( 20, 105, "Pos Y amarillo" + string(o_amarillo.y));
+//draw_text( 20, 115, "#amarillo " + string(instance_number(o_amarillo)));
+//}
+
+//draw_text( mouse_x, mouse_y, " Pos X"+ string( mouse_x));
+//draw_text( mouse_x, mouse_y + 50, " Pos Y"+ string( mouse_y));
+
+//if ( instance_exists( par_color)){
+//draw_text( 20, 55, "modeGame" + string(modeGame));
+//}
+execute code:
+
+///Coordenadas de dibujo area de juego y score
+
+draw_set_font( global.fntBitmapFont);
+//coordenadas de dibujo cuadro de juego
+var leftPlay = 0;//Inicio horizontal de area play
+var rightPlay = room_width - 230;//Fin horizontal de area play
+var supPlay = 0;//Inicio vertical de area play
+var infPlay = room_height;//Fin vertical de area play
+
+//coordenadas de dibujo cuadro de score
+var leftScore = 590;//Inicio horizontal de area score
+var rightScore = room_width;//Fin horizontal de area score
+var supScore = 0;//Inicio vertical de area score
+var infScore = room_height;//Fin vertical de area score
+
+//draw_rectangle_color(0,0, rightPlay, infPlay, c_black, c_blue, c_black, c_blue,0);
+execute code:
+
+///Informacion area de Score
+
+var posX = 600;
+var posX2 = 630;
+
+//Fondo
+draw_rectangle_color(leftScore,supScore, rightScore, infScore,c_orange, c_orange, c_black, c_orange, 0);
+//draw_set_font( font0);
+
+//Texto time
+draw_sprite( spr_reloj,0, posX,40);
+draw_text( posX2, 30, "=" + string( round( time)));
+
+//Texto level
+draw_text( posX, 80, "Level=" + string(level));
+
+//Textos de score
+draw_sprite( spr_red,0, posX,155);
+//draw_text( posX2, 150, " x " + string( global.scoreRojo));
+draw_text( posX2, 150, " x " + string(global.scoreRed));
+
+draw_sprite( spr_blue,0, posX,205);
+//draw_text( posX2, 200, " x " + string (global.scoreAzul));
+draw_text( posX2, 200, " x " + string (global.scoreBlue));
+
+draw_sprite_ext( spr_iconoColor,0, posX,255,1,1,0, c_yellow,1 );
+//draw_text( posX2, 250, " x " + string(global.scoreAmarillo));
+draw_text( posX2, 250, " x " + string(global.scoreYellow));
+
+draw_sprite_ext( spr_iconoColor,0, posX,305,1,1,0, c_black,1 );
+draw_text( posX2, 300, " x " + string(global.scoreBlack));
+
+draw_sprite_ext( spr_iconoColor,0, posX,355,1,1,0, c_white,1 );
+draw_text( posX2, 350, " x " + string(global.scoreWhite));
+
+//Texto score total
+scoreTotal = global.scoreRed + global.scoreBlue + global.scoreYellow
+             + global.scoreBlack + global.scoreWhite;
+draw_text( posX, 400, "Total=" + string(scoreTotal));
+
+
+
+//Vida player
+//Texto vidas
+draw_text( posX, 450, "Vidas");
+
+//Dibuja corazones
+distan = 35;
+for (i = 0; i< } (distan*i),500); + posX spr_life,0, draw_sprite( { i++)>
+execute code:
+
+///Dibuja Game over
+//draw_set_halign( fa_center);
+if( vidas <= 0){
+    draw_rectangle_color(20, 100, rightPlay - 20, 600, c_orange,c_olive,c_orange,c_orange,0);
+    draw_text( rightPlay div 2 - 120, infPlay div 2 - 200, string_upper("Game Over"));
+    draw_text( rightPlay div 2 - 180 , infPlay div 2 - 100, "Score = " + string(scoreTotal));
+    draw_text( rightPlay div 2 - 180 , infPlay div 2  - 50, "Time = " + string( round(time)));
+
+    
+    //draw_text( rightPlay div 2 - 250 , infPlay div 2  + 20, "ENTER para continuar");
+    //draw_text( rightPlay div 2 - 250 , infPlay div 2  + 70, "SPACE para reiniciar");
+    //draw_text( rightPlay div 2 - 250 , infPlay div 2  + 120, "ESCAPE para salir");
+}
+execute code:
+
+///Dibuja felicitaciones
+if( modeGame == 3 && scoreTotal >= 100){
+    draw_rectangle_color(20, 100, rightPlay - 20, 600, c_orange,c_olive,c_orange,c_orange,0);
+    draw_text( rightPlay div 2 - 180 , infPlay div 2 - 200, string_upper("Felicitaciones"));
+    draw_text( rightPlay div 2 - 180 , infPlay div 2 - 100, "Score = " + string(scoreTotal));
+    draw_text( rightPlay div 2 - 180 , infPlay div 2  - 50, "Time = " + string( round(time)));
+    draw_text( rightPlay div 2 - 180 , infPlay div 2  + 20, "ENTER para #volver a jugar");
+}
+______________________________________________________
+Information about object: o_ColorMaster 
+Sprite: 
+Solid: true
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///Movimientos segun modeGame
+//El movimiento vertical lo asigna el objeto control
+
+//Horizontal
+if( o_control.modeGame == 1)
+{
+    hspeed = random_range(-3,3);
+}
+
+//Horizontal 2
+if( o_control.modeGame == 2)
+{
+    hspeed = random_range(-11,11);
+}
+
+execute code:
+
+///Random de color
+
+image_speed = 0.3;//Velocidad de fotogramas
+
+
+//TRES FORMAS DIFERENTES DE DAR COLOR A UN OBJETO
+//Primero hacemos un random
+randomize();
+randColor = irandom(4);
+
+/*
+OPCION 1
+Usando el image_blend se le asigna un color 
+para cada array.
+*/
+
+//arColor[0] = c_black;
+//arColor[1] = c_white;
+//arColor[2] = c_blue;
+//arColor[3] = c_yellow;
+//arColor[4] = c_red;
+
+//image_blend = arColor[randColor];
+
+
+/*-------------------------------------------------------------------
+OPCION 2
+Usando una imagen o sprite por cada array
+y asignando esa imagen en el sprite_index.
+*/
+
+
+sprColor[0] = spr_colorBlack;
+sprColor[1] = spr_colorWhite;
+sprColor[2] = spr_colorBlue;
+sprColor[3] = spr_colorYellow;
+sprColor[4] = spr_colorRed;
+
+sprite_index = sprColor[randColor];
+
+
+/*-------------------------------------------------------------------------
+OPCION 3
+Otra opcion para generar colores aleatorios
+es usando make_color_rgb, en un rango entre 0 y 255
+por cada color,azul, amarillo y rojo.
+
+En este caso he usado choose para que escoja solo entre 0 ó 255
+ya que solo deseaba generar colores enteros y no tonalidades medias.
+
+Para tonalidades mas variadas usaria random(255) por cada color asi:
+image_blend = make_color_rgb( random(255),random(255),random(255),);
+*/
+//image_blend = make_color_rgb( choose(0,255),choose(0,255),choose(0,255));
+
+Step Event:
+execute code:
+
+///Destruccion de color y reduccion de vidas de player
+//scr_destruccion();
+
+//Cada vez que la burbuja llega al borde inferior.
+if( y > room_height){
+instance_destroy();//destruimos la misma instancia
+audio_play_sound(dano,20,0);//creamos sonido
+o_control.vidas--;//Restamos vidas
+}
+Collision Event with object o_solid:
+reverse horizontal direction
+Collision Event with object o_bullet:
+execute code:
+
+///Incrementa score, destruye instancia y damos color a splash
+if(randColor == 0)
+{
+global.scoreBlack++;
+}
+else if(randColor==1)
+{
+global.scoreWhite++;
+}
+else if(randColor==2)
+{
+global.scoreBlue++;
+}
+else if(randColor==3)
+{
+global.scoreYellow++;
+}
+else
+{
+global.scoreRed++;
+}
+
+/*Le asignamos el mismo color de la burbuja de color
+a la instancia splash*/
+instance_create(x,y,o_SplashMaster);//Creamos el objeto splash
+/*Este codigo funciona con la opcion 1*/
+//o_SplashMaster.image_blend = arColor[randColor];//asignacion de color
+
+/*Para la opcion 2 es el mismo objeto splash el que asigna
+la imagen mediante el randColor*/
+
+//Destruimos instancia
+instance_destroy();
+
+Draw Event:
+execute code:
+
+///Dibuja brillo de burbuja
+draw_self();
+//draw_sprite( spr_brillo,0,x+13, y - 20);
+//draw_circle_color(x+15,y-10,7,c_white,c_aqua,0);
+//draw_circle_color(x+19,y-3,7,c_white,c_aqua,0);
+______________________________________________________
+Information about object: o_solid 
+Sprite: spr_solid
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+______________________________________________________
+Information about object: o_menu 
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///Variable de fuente
+global.fntBitmapFont = font_add_sprite( spr_bitMapFont, ord("!"),1,1);
+window_set_caption( "Splash Color");
+//Counter = 10;
+//GameOver = false;
+execute code:
+
+///Imagen de cursor
+cursor_sprite = spr_mirilla;
+Draw Event:
+execute code:
+
+///Dibuja texto y titulo de inicio
+//draw_set_font( fntBitmapFont);
+draw_set_font( font0);
+draw_sprite( spr_title2, 0,room_width / 2 - 300, 50);
+draw_text_color( room_width / 2 - 345, 740,"Desarrollado por CHIPANA 2019", c_white, c_white, c_white, c_white,1);
+draw_set_color( c_white);
+______________________________________________________
+Information about object: o_player 
+Sprite: spr_player2
+Solid: true
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Step Event:
+execute code:
+
+///Movimiento, angulo y disparo
+//Disparo
+if(mouse_check_button_pressed( mb_left)){
+instance_create( x, y, o_bullet);
+
+    //if ( x == mouse_x && y == mouse_y)instance_destroy();
+} 
+
+//Movimiento horizontal
+if ( keyboard_check( ord("A"))){ x = x - 4;}
+if ( keyboard_check( ord("D"))){ x = x + 4;}
+
+//Angulo de imagen
+image_angle = point_direction(x,y, mouse_x, mouse_y);
+Collision Event with object o_solid:
+execute code:
+
+speed = 0;
+______________________________________________________
+Information about object: o_pausa 
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///variable boleana pausa
+pausa = false;
+Step Event:
+execute code:
+
+///Accion de tecla escape
+if (keyboard_check_pressed( vk_escape))
+{
+    if ( pausa == false)
+    {
+        instance_deactivate_all(true);
+        pausa = true;
+        if(!instance_exists( o_buttonExit)){
+        instance_create(room_width/2, room_height/3 + 200, o_buttonExitMenu);}
+    }
+    else {pausa = false;}
+}
+
+
+if ( pausa == false)
+{
+instance_activate_all();
+}
+Draw Event:
+execute code:
+
+///Dibuja texto
+if ( pausa == true)
+{
+draw_rectangle_color(0,room_height/2 - 150,room_width, room_height/2 + 150,c_orange,c_yellow,c_orange,c_orange,0);
+draw_text( room_width/2 - 70, room_height/2 - 50, string_upper("pausa"));
+//draw_text( room_width/2 - 70, room_height/2 + 10, string_upper("pausa"));
+}
+______________________________________________________
+Information about object: o_SplashMaster 
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///Variables de imagen y sonido
+audio_play_sound(splash,10,0);
+
+randomize();
+image_angle = random(360);
+
+
+/*INICIO ASIGNACION DE IMAGEN
+Este codigo funciona con la opcion 2 del objeto
+master_Color
+*/
+//Array de sprites
+sprColor[0] = spr_splashBlack;
+sprColor[1] = spr_splashWhite;
+sprColor[2] = spr_splashBlue;
+sprColor[3] = spr_splashYellow;
+sprColor[4] = spr_splashRed;
+
+//Asignamos la imagen de acuerdo al randColor del
+//objeto master_color
+splashColor = o_ColorMaster.randColor ;
+
+sprite_index = sprColor[splashColor];
+/*FIN ASIGNACION DE IMAGEN*/
+Step Event:
+execute code:
+
+///Transparencia
+image_alpha -=0.05;
+
+//si la transparencia llega a cero destruimos instancia
+if( image_alpha == 0){ instance_destroy();}
+
+
+______________________________________________________
+Information about object: o_button 
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///Color inicial de boton
+image_blend = c_green;
+Mouse Event for Mouse Enter:
+execute code:
+
+///Color resaltado Yellow
+image_blend = c_yellow;
+Mouse Event for Mouse Leave:
+execute code:
+
+///Color normal green
+image_blend = c_green;
+______________________________________________________
+Information about object: o_buttonPlay 
+Sprite: spr_button
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///Color inicial de boton
+image_blend = c_green;
+Mouse Event for Left Button:
+execute code:
+
+///Acciones  de click mouse
+//if ( mouse_check_button_pressed( mb_left)){
+room_goto_next();
+//}
+Mouse Event for Mouse Enter:
+execute code:
+
+///Color resaltado Yellow
+image_blend = c_yellow;
+Mouse Event for Mouse Leave:
+execute code:
+
+///Color normal green
+image_blend = c_green;
+Draw Event:
+execute code:
+
+///Dibuja texto boton
+draw_self();
+x = room_width / 2;
+y = room_height / 3 + 50;
+draw_set_font( global.fntBitmapFont);
+draw_text(x - 40,y-25,"Play");
+______________________________________________________
+Information about object: o_buttonContinuar 
+Sprite: spr_button
+Solid: false
+Visible: true
+Depth: -10
+Persistent: false
+Parent: o_button
+Mask: 
+Create Event:
+execute code:
+
+///Color inicial de boton
+image_blend = c_green;
+Mouse Event for Left Button:
+execute code:
+
+///Continuar
+//Continua desde donde se quedo juego al presionar ENTER
+o_control.stepTime = .01;
+o_control.vidas = 3;
+o_control.jugar = true;
+instance_create(256,736, o_player);//volvemos a crear player
+instance_destroy();//Se autodestruye
+Mouse Event for Mouse Enter:
+execute code:
+
+///Color resaltado Yellow
+image_blend = c_yellow;
+Mouse Event for Mouse Leave:
+execute code:
+
+///Color normal green
+image_blend = c_green;
+Draw Event:
+execute code:
+
+///Dibuja texto boton
+draw_self();
+//x = room_width / 2;
+//y = room_height / 3;
+draw_set_font( fnt_button);
+draw_text(x - 40,y-15,"Continuar");
+______________________________________________________
+Information about object: o_buttonReload 
+Sprite: spr_button
+Solid: false
+Visible: true
+Depth: -10
+Persistent: false
+Parent: o_button
+Mask: 
+Create Event:
+execute code:
+
+///Color inicial de boton
+image_blend = c_green;
+Mouse Event for Left Button:
+execute code:
+
+///Reiniciar
+room_restart();
+Mouse Event for Mouse Enter:
+execute code:
+
+///Color resaltado Yellow
+image_blend = c_yellow;
+Mouse Event for Mouse Leave:
+execute code:
+
+///Color normal green
+image_blend = c_green;
+Draw Event:
+execute code:
+
+///Dibuja texto boton
+draw_self();
+//x = room_width / 2;
+//y = room_height / 3;
+draw_set_font( fnt_button);
+draw_text(x - 40,y-15,"Reiniciar");
+______________________________________________________
+Information about object: o_buttonExit 
+Sprite: spr_button
+Solid: false
+Visible: true
+Depth: -10
+Persistent: false
+Parent: o_button
+Mask: 
+Create Event:
+execute code:
+
+///Color inicial de boton
+image_blend = c_green;
+Mouse Event for Left Button:
+execute code:
+
+///Salir de juego
+game_end();
+Mouse Event for Mouse Enter:
+execute code:
+
+///Color resaltado Yellow
+image_blend = c_yellow;
+Mouse Event for Mouse Leave:
+execute code:
+
+///Color normal green
+image_blend = c_green;
+Draw Event:
+execute code:
+
+///Dibuja texto boton
+draw_self();
+//x = room_width / 2;
+//y = room_height / 3;
+draw_set_font( fnt_button);
+draw_text(x - 20, y-15,"Salir");
+______________________________________________________
+Information about object: o_buttonExitMenu 
+Sprite: spr_button
+Solid: false
+Visible: true
+Depth: -10
+Persistent: false
+Parent: o_button
+Mask: 
+Create Event:
+execute code:
+
+///Color inicial de boton
+image_blend = c_green;
+Mouse Event for Left Button:
+execute code:
+
+///Salir de juego
+game_end();
+Mouse Event for Mouse Enter:
+execute code:
+
+///Color resaltado Yellow
+image_blend = c_yellow;
+Mouse Event for Mouse Leave:
+execute code:
+
+///Color normal green
+image_blend = c_green;
+Draw Event:
+execute code:
+
+///Dibuja texto boton
+draw_self();
+//x = room_width / 2;
+//y = room_height / 3;
+draw_set_font( global.fntBitmapFont);
+draw_text(x - 40, y - 25,"Exit");
+______________________________________________________
+Information about object: o_bullet 
+Sprite: spr_bullet
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Mask: 
+Create Event:
+execute code:
+
+///Variables de velocidad y direccion
+velocidad = 10;
+var dir;
+
+dir = point_direction( x,y, mouse_x, mouse_y);
+
+direction = dir;
+
+//sound_add( disparo,50,1)
+//sound_play( disparo);
+audio_play_sound(disparo,10,0);
+Step Event:
+execute code:
+
+///Velocidad
+speed = velocidad;
+Collision Event with object o_ColorMaster:
+destroy the instance
+Other Event: Outside Room:
+destroy the instance
+________________________________________
+
